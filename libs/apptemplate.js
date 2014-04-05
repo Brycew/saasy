@@ -8,7 +8,7 @@ var appLog   = require('./libs/applog')(config);
 moment().format();
 
 
-function server(serverSlip, database, schemas) {
+function server(serverSlip, database, schemas, cb) {
 	this.sessionsHTTP = {};
 	this.sessionsSOCK = {};
 	this.serverToken  = serverSlip.server_token;
@@ -16,7 +16,7 @@ function server(serverSlip, database, schemas) {
 	this.db           = database.useDb(config.dbApp.prefix + this.databaseID);
 	this.models       = {};
 	
-	this.securityGroups = {};
+	this.accessGroups = {};
 	
 	
 	for(var key in schemas) {
@@ -24,6 +24,8 @@ function server(serverSlip, database, schemas) {
 		this.models[obj.title] = this.db.model(obj.table,obj.schema);
 	}
 	
+	
+	/*
 	var authObj = {
 		sessionID : "12345",
 		loginToken : "535235",
@@ -32,10 +34,12 @@ function server(serverSlip, database, schemas) {
 		permissions : ['Employees.Default.View','Employees.Default.Edit']
 	};
 	this.sessionsHTTP["12345"] = authObj;
+	*/
 	
 
 	//init the housekeeping tasks
-	houseKeeping.init();	
+	houseKeeping.init();
+	
 
 }
 
@@ -54,7 +58,11 @@ function initAccessGroups(cb) {
 			appLog.logError('App Server #' + this.databaseID + ' Failed To Load Access Groups - Killing BootProcess');
 			return cb(false);
 		} else {
-			
+			for(var key in resp) {
+				var obj = resp[key];
+				this.accessGroups[obj._id] = obj.permissions;
+			}
+			return cb(true);
 		}
 	});
 };
