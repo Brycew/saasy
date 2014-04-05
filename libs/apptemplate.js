@@ -1,8 +1,9 @@
-var moment = require('moment');
-var us     = require('underscore');
-var config = require('./../config/defaults');
+var moment   = require('moment');
+var us       = require('underscore');
+var config   = require('./../config/defaults');
 var mongoose = require('mongoose');
-var util = require('util');
+var util     = require('util');
+var appLog   = require('./libs/applog')(config);
 
 moment().format();
 
@@ -14,6 +15,8 @@ function server(serverSlip, database, schemas) {
 	this.databaseID   = serverSlip.server_database_id;
 	this.db           = database.useDb(config.dbApp.prefix + this.databaseID);
 	this.models       = {};
+	
+	this.securityGroups = {};
 	
 	
 	for(var key in schemas) {
@@ -41,6 +44,25 @@ function server(serverSlip, database, schemas) {
 /////////////////////////////////////////////////////////////
 ////////////////// Private Server Functions /////////////////
 /////////////////////////////////////////////////////////////
+
+//////////////////// Bootstrap Functions ////////////////////
+
+function initAccessGroups(cb) {
+	this.models.AcessGroups.listActive(function(resp) {
+		//if we couldn't load the access groups
+		if(!resp) {
+			appLog.logError('App Server #' + this.databaseID + ' Failed To Load Access Groups - Killing BootProcess');
+			return cb(false);
+		} else {
+			
+		}
+	});
+};
+
+
+
+
+/////////////////////// House Keeping ///////////////////////
 
 function cleanExpiredSessions(cb) {
 	var now = moment();
@@ -122,10 +144,6 @@ function prettyParams(meth,text) {
 	};
 };
 
-function authorizeUser(username,password) {
-	
-}
-
 function checkHTTPAuth(req) {
 	var sessionID = req.header('sessionid');
 	var loginToken = req.header('logintoken');
@@ -154,8 +172,10 @@ function checkHTTPAuth(req) {
 	}	
 };
 
+/*test */
 
 server.prototype.routeHTTP = function(req,res, controller) {	
+
 	var out = prettyParams(req.method,req.params);
 	var isAuth = checkHTTPAuth(req);
 	
@@ -165,7 +185,7 @@ server.prototype.routeHTTP = function(req,res, controller) {
 	}
 	
 	//now that we've confirmed valid controller set it
-	var cont = new controller[out.controller](this.models, req);
+	var cont = new controller[out.controller](this, req);
 	
 	//check if action is valid
 	if(typeof cont[out.func] !== 'function' ){
@@ -182,6 +202,7 @@ server.prototype.routeHTTP = function(req,res, controller) {
 	
 	
 	cont.execute(function(resp) {
+		console.log(resp);
 		return res.json({error:false, response:resp});
 	});
 };

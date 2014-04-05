@@ -8,7 +8,8 @@ module.exports = function() {
 	var tableSchema = new mongoose.Schema({
 		session_status      : { type: String, default: 'ACTIVE'},
 		session_type        : String,
-		session_loginID     : String,
+		session_loginToken  : String,
+		session_loginID     : Schema.ObjectId,
 		session_ip          : String,
         
         session_permissions : Array,
@@ -29,6 +30,20 @@ module.exports = function() {
 	    }); 
     };
     
+    tableSchema.statics.insertSessionHTTP = function(loginID,loginToken,clientIP,cb) {
+    	var session = new this({session_type : 'http', 
+    							session_loginToken : loginToken,
+    							session_loginID : loginID, 
+    							session_ip : clientIP });
+    							
+    	session.save(function (err,newOBJ) {
+  			if (err) {
+  				return cb(err);
+  			} else {
+  				return cb(newOBJ);
+  			}
+		});
+    };
 
 
  
