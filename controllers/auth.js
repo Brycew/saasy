@@ -33,9 +33,9 @@ controller.prototype.postLoginbytoken = function() {
 	
 	this.execute = function(cb) {	
 		var searchObj = {
-			'employee_status'         : 'ACTIVE',
-			'employee_login_token'    : this.inputs.logintoken,
-			'employee_login_password' : this.inputs.loginpassword
+			employee_status         : 'ACTIVE',
+			employee_login_token    : this.inputs.logintoken,
+			employee_login_password : this.inputs.loginpassword
 		};	
 		this.db.Employees.getByLoginToken(searchObj, function(resp) {
 			if(typeof resp === 'object' && resp !== null) {
