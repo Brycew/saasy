@@ -3,7 +3,7 @@ var us       = require('underscore');
 var config   = require('./../config/defaults');
 var mongoose = require('mongoose');
 var util     = require('util');
-var appLog   = require('./libs/applog')(config);
+var appLog   = require('./../libs/applog')(config);
 
 moment().format();
 
@@ -36,9 +36,30 @@ function server(serverSlip, database, schemas, cb) {
 	this.sessionsHTTP["12345"] = authObj;
 	*/
 	
-
+	/*
+	var group1 = this.models.AccessGroups({group_title : 'default 2', group_description : 'blah blah blah'});
+	group1.save(function(err,resp) {
+		if(err) {
+			console.log(err);
+		} else {
+			console.log(resp);
+		}
+	});
+	*/
+	
 	//init the housekeeping tasks
 	houseKeeping.init();
+	
+	initAccessGroups(this,function(resp) {
+		if(!resp) {
+			console.log("kill process due to access group fail");
+			return cb(false);
+		} else {
+			return cb(true);
+		}
+	});
+
+
 	
 
 }
@@ -51,8 +72,9 @@ function server(serverSlip, database, schemas, cb) {
 
 //////////////////// Bootstrap Functions ////////////////////
 
-function initAccessGroups(cb) {
-	this.models.AcessGroups.listActive(function(resp) {
+
+function initAccessGroups(parent, cb) {
+	parent.models.AccessGroups.listActive(function(resp) {
 		//if we couldn't load the access groups
 		if(!resp) {
 			appLog.logError('App Server #' + this.databaseID + ' Failed To Load Access Groups - Killing BootProcess');
@@ -60,7 +82,7 @@ function initAccessGroups(cb) {
 		} else {
 			for(var key in resp) {
 				var obj = resp[key];
-				this.accessGroups[obj._id] = obj.permissions;
+				parent.accessGroups[obj._id] = obj.permissions;
 			}
 			return cb(true);
 		}
@@ -187,6 +209,7 @@ server.prototype.routeHTTP = function(req,res, controller) {
 	var out = prettyParams(req.method,req.params);
 	var isAuth = checkHTTPAuth(req);
 	
+	console.log(this.accessGroups);
 	//check if controller and action exist
 	if(typeof controller[out.controller] !== 'function') {
 		return res.json({error:true, routing:404, issue:'controller',route:out.func});
@@ -210,7 +233,8 @@ server.prototype.routeHTTP = function(req,res, controller) {
 	
 	
 	cont.execute(function(resp) {
-		console.log(resp);
+		//delete instance
+		delete cont;
 		return res.json({error:false, response:resp});
 	});
 };

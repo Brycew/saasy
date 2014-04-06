@@ -42,6 +42,8 @@ module.exports = {
 	},
 	appServer : {
 		cleanExpiredSessions : 300000,
-		updateSessions       : 600000
+		updateSessions       : 600000,
+		
+		idleKillServer       : 600000,  //how long before we kill the server - an idle server can be brought back from the dead if a request is made
 	}
 }

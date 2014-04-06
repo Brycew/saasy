@@ -12,6 +12,8 @@ module.exports = function() {
         employee_login_token     : String,
         employee_login_password  : String,
         
+        //employee_acces_group     : 
+        
         
         timestamp_created  : { type: Date, default: Date.now },
         timestamp_modified : { type: Date, default: Date.now },

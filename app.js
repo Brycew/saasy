@@ -106,12 +106,19 @@ function listAppServers() {
 function buildEachServer(serverSlip) {
 	var id = serverSlip.server_database_id;
 	
-	app.serverPool[id] = new appTemplate(serverSlip, dB.pool, dB.poolSchema);
-	
-	//add token entry to our server token map (maps to database id)
-	app.tokenMap[serverSlip.server_token] = serverSlip.server_database_id;
-	
-	appLog.logBoot('App Server #' + serverSlip.server_database_id + ' Loaded Into Memory');
+	app.serverPool[id] = new appTemplate(serverSlip, dB.pool, dB.poolSchema, function(resp) {
+		if(!resp) {
+			appLog.logBoot('App Server #' + serverSlip.server_database_id + ' Failed To Load Into Memory');
+			return false;
+		} else {
+			//add token entry to our server token map (maps to database id)
+			app.tokenMap[serverSlip.server_token] = serverSlip.server_database_id;
+			
+			appLog.logBoot('App Server #' + serverSlip.server_database_id + ' Loaded Into Memory');
+			
+			return true;		
+		}
+	});	
 };
 
 
