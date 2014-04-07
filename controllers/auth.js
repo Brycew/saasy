@@ -15,19 +15,22 @@ controller.prototype.postLoginbytoken = function() {
 	var db = this.db;
 	
 	//private function create session with static model and insert into server memory
-	var createSession = function(loginID, loginToken, clientIP, cb) {
-		db.AccessSessions.insertSessionHTTP(loginID, loginToken, clientIP, function(resp) {
+	var createSession = function(loginID, loginToken, clientIP, AccessGroups, cb) {
+		db.AccessSessions.insertSessionHTTP(loginID, loginToken, clientIP, AccessGroups, function(resp) {
 			if(resp === null) {
 				return cb({loginError:true,reason:500});
 			}
 			
 			parent.sessionsHTTP[resp._id] = {
-				session_loginID    : resp.session_loginID,
-				session_loginToken : resp.session_loginToken,
-				session_ip         : resp.session_ip,
-				timestamp_lastuse  : moment.utc().format()
+				session_loginID      : resp.session_loginID,
+				session_loginToken   : resp.session_loginToken,
+				session_ip           : resp.session_ip,
+				session_accessGroups : resp.session_accessGroups,
+				timestamp_lastuse    : moment.utc().format()
 				
 			};
+			
+			console.log(parent.sessionsHTTP[resp._id]);
 			
 			return cb(resp);
 		});
@@ -41,7 +44,7 @@ controller.prototype.postLoginbytoken = function() {
 		};	
 		this.db.Employees.getByLoginToken(searchObj, function(resp) {
 			if(typeof resp === 'object' && resp !== null) {
- 				createSession(resp._id,resp.employee_login_token,'127.0.0.1',function(session) {
+ 				createSession(resp._id,resp.employee_login_token,'127.0.0.1',resp.employee_group_id.access_groups,function(session) {
  					return cb(session);
  				});
 			} else {

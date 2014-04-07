@@ -2,10 +2,11 @@ var moment   = require('moment');
 //var us       = require('underscore');
 var config   = require('./../config/defaults');
 var mongoose = require('mongoose');
-//var util     = require('util');
+var util     = require('util');
 var appLog   = require('./../libs/applog')(config);
 var misc     = require('./../libs/misc');
 
+var ObjectId = mongoose.Types.ObjectId;
 
 function server(serverSlip, database, schemas, appCallback) {
 	////////////////// Public Variables /////////////////	
@@ -19,6 +20,8 @@ function server(serverSlip, database, schemas, appCallback) {
 	
 	var parent = this;
 	
+	
+
 		
 	/////////////////////////////////////////////////////
 	///////////// Private Server Functions //////////////
@@ -28,9 +31,8 @@ function server(serverSlip, database, schemas, appCallback) {
 	function initSchemas(cb) {
 		for(var key in schemas) {
 			var obj = schemas[key];
-			parent.models[obj.title] = parent.db.model(obj.table,obj.schema);
+			parent.models[obj.title] = parent.db.model(obj.title,obj.schema,obj.title);
 		}
-		
 		return cb(true);
 	}
 	
@@ -67,13 +69,14 @@ function server(serverSlip, database, schemas, appCallback) {
 	};
 	
 	function updateSessions(cb) {
+		/*
 		for(var key in parent.sessionsHTTP) {
 			var obj = parent.sessionsHTTP[key];	
 			
 			var isExpired = moment().isBefore(
 			console.log(unixTime);
 		}
-		houseKeeping.updateSessions();
+		houseKeeping.updateSessions(); */
 	};
 	
 	
@@ -112,7 +115,58 @@ function server(serverSlip, database, schemas, appCallback) {
 			if(!resp) {
 				return appCallback(false);
 			} else {
-				return appCallback({ dbID : serverSlip.server_database_id, token : serverSlip.server_token });
+					/*
+					var newGroup = new parent.models.EmployeeGroups({group_title:'Administrator',group_desc:'Root Security Rights'});
+					newGroup.save(function(err,resp) {
+						console.log(err);
+						console.log(resp);
+					});*/
+					
+					/*
+					parent.models.Employees.findOne({'_id': ObjectId('533cb26895745c770a3641ba')}, function (err, doc) {
+						if(err || !doc || doc === null) {
+							return appCallback({ dbID : serverSlip.server_database_id, token : serverSlip.server_token });
+						}
+
+
+						doc.access_group_id = ObjectId('5341fdd3ff1126c1385c0c22');
+						doc.save(function(err,resp) {
+							console.log(resp);
+							return appCallback({ dbID : serverSlip.server_database_id, token : serverSlip.server_token });
+						});
+
+					});
+					
+					*/
+					/*
+					
+					parent.models.Employees.findOne({'_id': ObjectId('533cb26895745c770a3641ba')}).populate('employee_group_id').exec(function(err,doc) {
+						if(doc === null) {
+							return true;
+						}
+					
+						parent.models.EmployeeGroups.populate(doc, {path   : 'employee_group_id.access_groups',
+																	model  : 'AccessGroups',
+																	select : 'permissions'},
+							function(err,resp) {
+								console.log(util.inspect(resp, { showHidden: true, depth: null }));
+							}
+						);
+							
+
+						/*
+						doc.employee_group_id.populate('access_groups', function(err,resp) {
+							console.log(resp);
+						});
+					});
+					*/
+					
+					
+					return appCallback({ dbID : serverSlip.server_database_id, token : serverSlip.server_token });
+					
+					
+			
+				
 			}			
 		});
 	};

@@ -88,7 +88,6 @@ function initPoolSchema() {
 //query the global db and return all active app servers
 //we're going against our domino bootstrap here, we'll skip over the Build function after
 function listAppServers() {
-
 	dB.global.AppServers.listActive(function(resp) {
 		if(!resp) {
 			return appLog.logError('Database Error - Unable To List Active Store Servers');

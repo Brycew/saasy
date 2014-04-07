@@ -29,3 +29,5 @@ module.exports = function(mongoose) {
 	return tableSchema;
 	
 };
+
+module.exports = tableSchema;

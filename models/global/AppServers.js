@@ -1,9 +1,6 @@
-module.exports = function(mongoose) {
-	var tableName = 'app_server';
-	
+var mongoose = require('mongoose');
 
 	var tableSchema = new mongoose.Schema({
-        server_id          : mongoose.Schema.ObjectId,
         server_status      : { type: String, default: 'ACTIVE'},
         server_account_id  : Number,
         server_database_id : Number,
@@ -22,10 +19,7 @@ module.exports = function(mongoose) {
 	    	}
 	    }); 
     };
-    
 
 
- 
-	return tableSchema;
-	
-};
+
+module.exports = tableSchema;

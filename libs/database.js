@@ -20,21 +20,10 @@ module.exports = function(config) {
 					return false;
 				}
 				var fileName = file.substring(0, file.length - 3);
-				var arr = file.match(/(.*)\.[^.]+$/)[1].split(/\s|_/);
-			    for(var i=0,l=arr.length; i<l; i++) {
-			        arr[i] = arr[i].substr(0,1).toUpperCase() + 
-			                 (arr[i].length > 1 ? arr[i].substr(1).toLowerCase() : "");
-			    }
-			    var title = arr.join("");
-				
-				obj.global.model(fileName, require('../' + config.dbGlobal.modelDir + fileName)(mongoose) );
-				obj.global[title] = obj.global.models[fileName];
-				
+				obj.global[fileName] = obj.global.model(fileName, require('../' + config.dbGlobal.modelDir + fileName) ,fileName);			
 			});
 			
-			return cb(resp);			
-			
-			
+			return cb(resp);		
 		});
 	};
 	
@@ -49,17 +38,10 @@ module.exports = function(config) {
 				return false;
 			}
 			var fileName = file.substring(0, file.length - 3);
-			var arr = file.match(/(.*)\.[^.]+$/)[1].split(/\s|_/);
-		    for(var i=0,l=arr.length; i<l; i++) {
-		        arr[i] = arr[i].substr(0,1).toUpperCase() + 
-		                 (arr[i].length > 1 ? arr[i].substr(1).toLowerCase() : "");
-		    }
-		    var title = arr.join("");
 			
 			var schema = {
-				title  : title,
-				table  : fileName,
-				schema : require('../' + config.dbApp.modelDir + fileName)(mongoose)
+				title  : fileName,
+				schema : require('../' + config.dbApp.modelDir + fileName)
 			};
 			obj.poolSchema.push(schema);		
 		});
