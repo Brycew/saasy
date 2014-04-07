@@ -1,3 +1,5 @@
+var moment = require('moment');
+
 function controller(parent, req) {
 	this.parent = parent;
 	this.db = parent.models;
@@ -20,10 +22,10 @@ controller.prototype.postLoginbytoken = function() {
 			}
 			
 			parent.sessionsHTTP[resp._id] = {
-				id      : resp._id,
-				loginID : resp.session_loginID,
-				loginToken : resp.session_loginToken,
-				ip      : resp.session_ip
+				session_loginID    : resp.session_loginID,
+				session_loginToken : resp.session_loginToken,
+				session_ip         : resp.session_ip,
+				timestamp_lastuse  : moment.utc().format()
 				
 			};
 			

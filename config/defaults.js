@@ -16,7 +16,8 @@ module.exports = {
 		loginCollection : 'employees',
 		loginUsername   : 'login_token',
 		loginPassword   : 'login_password',
-		timeout         : 6000
+		timeout         : 6000,
+		maxConnections  : 5
 	},
 	
 	controller : {
@@ -41,8 +42,8 @@ module.exports = {
 		bindingPort   : 8888
 	},
 	appServer : {
-		cleanExpiredSessions : 300000,
-		updateSessions       : 600000,
+		cleanExpiredSessions : 300000, //how often should we remove expired sessions from memory
+		updateSessions       : 2000,
 		
 		idleKillServer       : 600000,  //how long before we kill the server - an idle server can be brought back from the dead if a request is made
 	}

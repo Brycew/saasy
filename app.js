@@ -6,6 +6,8 @@ var controller  = require('./libs/controller')(config);
 var appTemplate = require('./libs/apptemplate');
 var express     = require('express');
 
+//var agent = require('webkit-devtools-agent');
+
 //transport layers
 var http      = express();
 var websocket = require('socket.io');
@@ -112,9 +114,9 @@ function buildEachServer(serverSlip) {
 			return false;
 		} else {
 			//add token entry to our server token map (maps to database id)
-			app.tokenMap[serverSlip.server_token] = serverSlip.server_database_id;
+			app.tokenMap[resp.token] = resp.dbID;
 			
-			appLog.logBoot('App Server #' + serverSlip.server_database_id + ' Loaded Into Memory');
+			appLog.logBoot('App Server #' + resp.dbID + ' Loaded Into Memory');
 			
 			return true;		
 		}
@@ -183,3 +185,25 @@ function initHttpServer() {
 
 //Let's run the domino boostrap
 bootstrap();
+
+/*
+var count=0;
+var test = function() {
+	this['blahtesting'+count] = {};
+	
+	console.log("inserting");
+	for(var i=0; i<300000; i++) {
+		this['blahtesting'+count][i] = {
+			test : "test",
+			blah : "124151251",
+			gay : true
+		};
+	};
+	console.log("done");
+	delete this['blahtesting'+count];
+	count++;
+};
+setInterval(function(){
+	test();
+	}, 500);
+test(); */

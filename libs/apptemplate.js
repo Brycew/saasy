@@ -4,171 +4,135 @@ var config   = require('./../config/defaults');
 var mongoose = require('mongoose');
 //var util     = require('util');
 var appLog   = require('./../libs/applog')(config);
+var misc     = require('./../libs/misc');
 
-moment().format();
 
-
-function server(serverSlip, database, schemas) {
+function server(serverSlip, database, schemas, appCallback) {
+	////////////////// Public Variables /////////////////	
 	this.sessionsHTTP = {};
 	this.sessionsSOCK = {};
 	this.serverToken  = serverSlip.server_token;
 	this.databaseID   = serverSlip.server_database_id;
 	this.db           = database.useDb(config.dbApp.prefix + this.databaseID);
 	this.models       = {};
-	
 	this.accessGroups = {};
 	
+	var parent = this;
 	
-	for(var key in schemas) {
-		var obj = schemas[key];
-		this.models[obj.title] = this.db.model(obj.table,obj.schema);
+		
+	/////////////////////////////////////////////////////
+	///////////// Private Server Functions //////////////
+	/////////////////////////////////////////////////////
+	
+	////////////// Bootstrap Functions //////////////////
+	function initSchemas(cb) {
+		for(var key in schemas) {
+			var obj = schemas[key];
+			parent.models[obj.title] = parent.db.model(obj.table,obj.schema);
+		}
+		
+		return cb(true);
 	}
 	
-	
-	/*
-	var authObj = {
-		sessionID : "12345",
-		loginToken : "535235",
-		ip : '127.0.0.1',
-		expires : moment() + 20000,
-		permissions : ['Employees.Default.View','Employees.Default.Edit']
-	};
-	this.sessionsHTTP["12345"] = authObj;
-	*/
-	
-	/*
-	var group1 = this.models.AccessGroups({group_title : 'default 2', group_description : 'blah blah blah'});
-	group1.save(function(err,resp) {
-		if(err) {
-			console.log(err);
-		} else {
-			console.log(resp);
-		}
-	});
-	*/
-	
-	//init the housekeeping tasks
-	houseKeeping.init();
-};
-
-
-
-/////////////////////////////////////////////////////////////
-////////////////// Private Server Functions /////////////////
-/////////////////////////////////////////////////////////////
-
-//////////////////// Bootstrap Functions ////////////////////
-
-
-function initAccessGroups(cb) {
-	this.models.AccessGroups.listActive(function(resp) {
-		//if we couldn't load the access groups
-		if(!resp) {
-			appLog.logError('App Server #' + this.databaseID + ' Failed To Load Access Groups - Killing BootProcess');
-			return cb(false);
-		} else {
-			for(var key in resp) {
-				var obj = resp[key];
-				this.accessGroups[obj._id] = obj.permissions;
+	function initAccessGroups(cb) {
+		parent.models.AccessGroups.listActive(function(resp) {
+			//if we couldn't load the access groups
+			if(!resp) {
+				appLog.logError('App Server #' + parent.databaseID + ' Failed To Load Access Groups - Killing BootProcess');
+				return cb(false);
+			} else {
+				for(var key in resp) {
+					var obj = resp[key];
+					parent.accessGroups[obj._id] = obj.permissions;
+				}
+				return cb(true);
 			}
-			return cb(true);
-		}
-	});
-};
-
-
-
-
-/////////////////////// House Keeping ///////////////////////
-
-function cleanExpiredSessions(cb) {
-	var now = moment();
-	
-	//loop thru http sessions and check if expired then purge
-	for(var key in this.sessionsHTTP) {
-		var obj = this.sessionsHTTP[key];	
-		if(obj.expires <= now) {
-			delete this.sessionsHTTP[key];
-			console.log('purged');
-		}
-	}
-	return cb();
-};
-
-function updateSessions(cb) {
-	console.log("updatesessions");
-};
-
-
-
-var houseKeeping = {
-	cleanExpiredSessions : function() {
-		setTimeout( function() {
-			cleanExpiredSessions(houseKeeping.cleanExpiredSessions);
-		}, config.appServer.cleanExpiredSessions );
-	},
-	updateSessions : function() {
-		setTimeout( function() {
-			updateSessions(houseKeeping.updateSessions);
-		}, config.appServer.updateSessions );		
-	},
-	kill : function() {
-		
-	},
-	init : function() {
-		houseKeeping.updateSessions();
-		houseKeeping.cleanExpiredSessions();
-	}
-};
-
-
-
-
-
-
-//format our url into our function to call
-//sample url using method GET /api/employees/employee/id/123
-function prettyParams(meth,text) {
-	var split = text[0].split('/');
-	
-	var controller = split[1].charAt(0).toUpperCase() + split[1].slice(1);
-	var action = split[2].charAt(0).toUpperCase() + split[2].slice(1);
-	var method = (meth+"").toLowerCase();
-	
-	var passingVars = {};
-	//let's grab our variables to pass to the controller
-	if(split.length > 3) {
-		//get a base count (remove the controller and action from the count)
-		var base = 3;
-		var count = (split.length) - base;
-				
-		for(x=0;x<count;x++) {
-			var countThis = parseInt(base+x);
-			passingVars[split[countThis]] = split[countThis+1];
-			//skip ahead since the next is this's vars
-			x++;
-		}
-	}
-	
-	//
-	
-	
-	return {
-		controller:controller,
-		func:(method+""+action),
-		vars:passingVars
-		
+		});
 	};
+	
+	/////////////////// House Keeping ///////////////////
+	
+	function cleanExpiredSessions(cb) {
+		var now = moment();
+		
+		//loop thru http sessions and check if expired then purge
+		for(var key in parent.sessionsHTTP) {
+			var obj = parent.sessionsHTTP[key];	
+			if(obj.expires <= now) {
+				delete parent.sessionsHTTP[key];
+				console.log('purged');
+			}
+		}
+		return cb();
+	};
+	
+	function updateSessions(cb) {
+		for(var key in parent.sessionsHTTP) {
+			var obj = parent.sessionsHTTP[key];	
+			
+			var isExpired = moment().isBefore(
+			console.log(unixTime);
+		}
+		houseKeeping.updateSessions();
+	};
+	
+	
+	
+	var houseKeeping = {
+		cleanExpiredSessions : function() {
+			setTimeout( function() {
+				cleanExpiredSessions(houseKeeping.cleanExpiredSessions);
+			}, config.appServer.cleanExpiredSessions );
+		},
+		updateSessions : function() {
+			setTimeout( function() {
+				updateSessions(houseKeeping.updateSessions);
+			}, config.appServer.updateSessions );		
+		},
+		kill : function() {
+			
+		},
+		init : function() {
+			houseKeeping.updateSessions();
+			houseKeeping.cleanExpiredSessions();
+		}
+	};	
+		
+	///////////////// Domino Bootstrap /////////////////
+	
+	function init() {
+		//init housekeeping
+		houseKeeping.init();
+		
+		initSchemas(function() { afterInitSchemas(); });	
+	};
+	
+	function afterInitSchemas() {
+		initAccessGroups(function(resp) {
+			if(!resp) {
+				return appCallback(false);
+			} else {
+				return appCallback({ dbID : serverSlip.server_database_id, token : serverSlip.server_token });
+			}			
+		});
+	};
+
+	init();
+	
 };
 
-function checkHTTPAuth(req) {
+//update sessions lastuse timestamp to extend expirey
+server.prototype.updateHTTPSession = function(sessionID) {
+	this.sessionsHTTP[sessionID].timestamp_lastuse = moment();
+};
+
+
+server.prototype.checkHTTPAuth = function(req) {
 	var sessionID = req.header('sessionid');
 	var loginToken = req.header('logintoken');
 	var ip = req.ip;
-	console.log("test");
-	console.log(this.sessionsHTTP);
-	//if no such session exists w/ the supplied id
 	
+	//if no such session exists w/ the supplied id	
 	if(!sessionID || !loginToken) {
 		return 'session-not-found';
 	} else if(typeof this.sessionsHTTP[sessionID] === 'undefined') {
@@ -190,23 +154,11 @@ function checkHTTPAuth(req) {
 	}	
 };
 
-/*test */
-server.prototype.init = function(cb) {
-	//console.log(this);
-	/*initAccessGroups(function(resp) {
-		if(!resp) {
-			return cb(false);
-		} else {
-			return cb(true);
-		}
-	});*/
-};
 server.prototype.routeHTTP = function(req,res, controller) {	
 
-	var out = prettyParams(req.method,req.params);
-	var isAuth = checkHTTPAuth(req);
+	var out = misc.prettyParams(req.method,req.params);
+	var isAuth = this.checkHTTPAuth(req);
 	
-	console.log("test"); wetw
 	//check if controller and action exist
 	if(typeof controller[out.controller] !== 'function') {
 		return res.json({error:true, routing:404, issue:'controller',route:out.func});
@@ -228,7 +180,7 @@ server.prototype.routeHTTP = function(req,res, controller) {
 	}
 	//check if we maintain the basic permissions to run this function
 	
-	
+	console.log(this.sessionsHTTP);
 	cont.execute(function(resp) {
 		//delete instance
 		delete cont;
