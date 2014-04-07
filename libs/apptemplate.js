@@ -21,7 +21,6 @@ function server(serverSlip, database, schemas, appCallback) {
 	var parent = this;
 	
 	
-
 		
 	/////////////////////////////////////////////////////
 	///////////// Private Server Functions //////////////
@@ -52,6 +51,29 @@ function server(serverSlip, database, schemas, appCallback) {
 		});
 	};
 	
+	function initSessions(cb) {
+		parent.models.AccessSessions.listActive(function(resp) {
+			if(!resp) {
+				return cb(false);
+			}
+			resp.forEach(function(session) {
+				if(session.session_type === 'http') {
+					parent.sessionsHTTP[session._id] = {
+						session_loginID      : session.session_loginID,
+						session_loginToken   : session.session_loginToken,
+						session_ip           : session.session_ip,
+						session_accessGroups : session.session_accessGroups,
+						timestamp_lastuse    : session.timestamp_lastuse,
+						timestamp_expires    : session.timestamp_expires							
+					};
+				}
+			});
+			return cb(true);
+			
+		});
+		
+	}
+	
 	/////////////////// House Keeping ///////////////////
 	
 	function cleanExpiredSessions(cb) {
@@ -60,23 +82,33 @@ function server(serverSlip, database, schemas, appCallback) {
 		//loop thru http sessions and check if expired then purge
 		for(var key in parent.sessionsHTTP) {
 			var obj = parent.sessionsHTTP[key];	
-			if(obj.expires <= now) {
-				delete parent.sessionsHTTP[key];
-				console.log('purged');
+			
+			if(moment().isAfter(obj.timestamp_expires) ) {
+				console.log(key);
+				parent.models.AccessSessions.updateExpiredSession(key,function(resp) {
+					if(resp) {
+						appLog.logError('App Server #' + parent.databaseID + ' Session '+key+' Expired');
+						delete parent.sessionsHTTP[key];
+					}
+					return true;
+				});
+				
 			}
 		}
 		return cb();
+		
 	};
 	
 	function updateSessions(cb) {
-		/*
 		for(var key in parent.sessionsHTTP) {
 			var obj = parent.sessionsHTTP[key];	
 			
-			var isExpired = moment().isBefore(
-			console.log(unixTime);
+			console.log( getAccessSetting('Web.Auth.Timeout', obj.session_accessGroups) );
+			
+			//var isExpired = moment().isBefore(
+			//console.log(unixTime);
 		}
-		houseKeeping.updateSessions(); */
+		houseKeeping.updateSessions(); 
 	};
 	
 	
@@ -96,10 +128,54 @@ function server(serverSlip, database, schemas, appCallback) {
 			
 		},
 		init : function() {
-			houseKeeping.updateSessions();
+			//houseKeeping.updateSessions();
 			houseKeeping.cleanExpiredSessions();
 		}
-	};	
+	};
+	
+	
+	//////////////// Security Functions ////////////////
+	
+	function getAccessSetting(setting, groups) {
+		if(groups.length > 1) {
+			var holder  = [];
+			/*
+				TODO 
+				add suport for multiple settings via multi group
+			
+			*/
+		} else {
+			var group = parent.accessGroups[groups[0]];		
+			function index(group,i) { return group[i] };
+			
+			return setting.split('.').reduce(index, group);
+		}
+	}
+	
+	function getAccessPermission(permission, groups) {
+		if(groups.length > 1) {
+			var holder  = [];
+			/*
+				TODO 
+				add suport for multiple permissions via multi group
+			
+			*/
+		} else {
+			var group = parent.accessGroups[groups[0]];		
+			function index(group,i) { return group[i] };
+			
+			return permission.split('.').reduce(index, group);
+		}	
+	}
+	
+	function authorizeMultiplePermissions(permissions, groups) {
+		
+		permissions.reduce(function(authorized){
+			console.log("test");
+		});
+	}
+	
+	
 		
 	///////////////// Domino Bootstrap /////////////////
 	
@@ -115,69 +191,93 @@ function server(serverSlip, database, schemas, appCallback) {
 			if(!resp) {
 				return appCallback(false);
 			} else {
-					/*
-					var newGroup = new parent.models.EmployeeGroups({group_title:'Administrator',group_desc:'Root Security Rights'});
-					newGroup.save(function(err,resp) {
-						console.log(err);
-						console.log(resp);
-					});*/
-					
-					/*
-					parent.models.Employees.findOne({'_id': ObjectId('533cb26895745c770a3641ba')}, function (err, doc) {
-						if(err || !doc || doc === null) {
-							return appCallback({ dbID : serverSlip.server_database_id, token : serverSlip.server_token });
-						}
-
-
-						doc.access_group_id = ObjectId('5341fdd3ff1126c1385c0c22');
-						doc.save(function(err,resp) {
-							console.log(resp);
-							return appCallback({ dbID : serverSlip.server_database_id, token : serverSlip.server_token });
-						});
-
-					});
-					
-					*/
-					/*
-					
-					parent.models.Employees.findOne({'_id': ObjectId('533cb26895745c770a3641ba')}).populate('employee_group_id').exec(function(err,doc) {
-						if(doc === null) {
-							return true;
-						}
-					
-						parent.models.EmployeeGroups.populate(doc, {path   : 'employee_group_id.access_groups',
-																	model  : 'AccessGroups',
-																	select : 'permissions'},
-							function(err,resp) {
-								console.log(util.inspect(resp, { showHidden: true, depth: null }));
-							}
-						);
-							
-
-						/*
-						doc.employee_group_id.populate('access_groups', function(err,resp) {
-							console.log(resp);
-						});
-					});
-					*/
-					
-					
-					return appCallback({ dbID : serverSlip.server_database_id, token : serverSlip.server_token });
-					
-					
-			
-				
+				return initSessions(function(resp) { afterInitSessions(resp); } );
 			}			
 		});
 	};
+	
+	function afterInitSessions(resp) {
+		return appCallback({ dbID : serverSlip.server_database_id, token : serverSlip.server_token });	
+	}
 
 	init();
 	
 };
 
+
+//////////////// Security Functions ////////////////
+
+server.prototype.getAccessSetting = function(setting, groups) {
+	if(groups.length > 1) {
+		var holder  = [];
+		/*
+			TODO 
+			add suport for multiple settings via multi group
+		
+		*/
+	} else {
+		var group = parent.accessGroups[groups[0]];		
+		function index(group,i) { return group[i] };
+		
+		return setting.split('.').reduce(index, group);
+	}
+}
+
+server.prototype.getAccessPermission = function(permission, groups) {
+	
+	if(groups.length > 1) {
+		var holder  = [];
+		/*
+			TODO 
+			add suport for multiple permissions via multi group
+		
+		*/
+	} else {
+		var group = this.accessGroups[groups[0]];		
+		function index(group,i) { return group[i] };
+		
+		try {
+			return permission.split('.').reduce(index, group);
+			throw err;
+		} catch (err) {
+    		return false;
+    	}
+		
+	}
+	
+}
+
+server.prototype.authorizeMultiplePermissions = function(permissions, groups) {
+	var parent = this;
+	var authorized = true;
+	
+	permissions.forEach(function(permission) {
+		var check = parent.getAccessPermission(permission,groups);
+		if(!check || check === null || check === false) {
+			authorized = false;
+		}
+	});
+	
+	return authorized;
+}
+
+
+
+
+
+
+
+
+
+
+
+
 //update sessions lastuse timestamp to extend expirey
 server.prototype.updateHTTPSession = function(sessionID) {
 	this.sessionsHTTP[sessionID].timestamp_lastuse = moment();
+	//var time = 
+	console.log(getAccessSetting);
+	//this.sessionsHTTP[sessionID].timestamp_expires = 
 };
 
 
@@ -191,11 +291,11 @@ server.prototype.checkHTTPAuth = function(req) {
 		return 'session-not-found';
 	} else if(typeof this.sessionsHTTP[sessionID] === 'undefined') {
 		return 'session-not-found';
-	} else if(this.sessionsHTTP[sessionID].loginToken != loginToken) {
+	} else if(this.sessionsHTTP[sessionID].session_loginToken !== loginToken) {
 		return 'session-404-logintoken';
-	} else if(this.sessionsHTTP[sessionID].expires <= moment() ) {
+	} else if(moment().isAfter(this.sessionsHTTP[sessionID].timestamp_expires) ) {
 		return 'session-timeout';
-	} else if(this.sessionsHTTP[sessionID].ip != ip) {
+	} else if(this.sessionsHTTP[sessionID].session_ip !== ip) {
 		/* TODO !!!!!!
 		
 		Log this IP for attempting to use a sessionid on another ip.
@@ -204,7 +304,7 @@ server.prototype.checkHTTPAuth = function(req) {
 		*/
 		return 'session-404-ip';
 	} else {
-		return true;
+		return this.sessionsHTTP[sessionID];
 	}	
 };
 
@@ -220,21 +320,25 @@ server.prototype.routeHTTP = function(req,res, controller) {
 	
 	//now that we've confirmed valid controller set it
 	var cont = new controller[out.controller](this, req);
-	
+
 	//check if action is valid
 	if(typeof cont[out.func] !== 'function' ){
 		return res.json({error:true, routing:404, issue:'action',route:out.func});
 	}
 	//load controller into init
 	cont[out.func]();
-	
 	//check if this action requires us to be logged in
-	if(cont.needAuth && isAuth !== true) {
+	if(cont.needAuth && typeof isAuth !== 'object') {
 		return res.json({error:true, routing:401, route:out.func});
 	}
 	//check if we maintain the basic permissions to run this function
+	if(cont.permissions.length >= 1) {
+		if(!this.authorizeMultiplePermissions(cont.permissions,isAuth.session_accessGroups) ) {
+			return res.json({error:true, routing:4012, route:out.func});	
+		}
+	}
 	
-	console.log(this.sessionsHTTP);
+	//console.log(this.sessionsHTTP);
 	cont.execute(function(resp) {
 		//delete instance
 		delete cont;
