@@ -26,7 +26,7 @@ tableSchema.statics.listActive = function(cb) {
     	}
     }); 
 };
-
+//test
 tableSchema.statics.getByLoginToken = function(logins, cb) {
 
     this.findOne(logins).select('_id employee_id employee_login_token employee_group_id').populate('employee_group_id').exec(function(err,doc) { 
