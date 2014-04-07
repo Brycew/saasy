@@ -6,7 +6,6 @@ var controller  = require('./libs/controller')(config);
 var appTemplate = require('./libs/apptemplate');
 var express     = require('express');
 
-//var agent = require('webkit-devtools-agent');
 
 //transport layers
 var http      = express();
