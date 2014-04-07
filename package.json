@@ -1,0 +1,43 @@
+{
+  "name": "saasy",
+  "description": "multi-tenant node.js app framework",
+  "version": "0.1",
+  "author": {
+    "name": "Bryce Wilkinson",
+    "email": "bryce@bluedev.ca"
+  },
+  "contributors": [
+    {
+      "name": "Bryce Wilkinson",
+      "email": "bryce@bluedev.ca"
+    }
+  ],
+  "dependencies": {
+  	"express": "3.5.0",
+  	"moment": "2.5.1",
+  	"mongoose": "3.8.8",
+  	"socket.io": "0.9.16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/visionmedia/express"
+  },
+  "main": "index",
+  "bin": {
+    "express": "./bin/express"
+  },
+  "scripts": {
+    "prepublish": "npm prune",
+    "test": "make test"
+  },
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "readmeFilename": "Readme.md",
+  "bugs": {
+    "url": "https://github.com/visionmedia/express/issues"
+  },
+  "homepage": "https://github.com/visionmedia/express",
+  "_id": "express@3.5.0",
+  "_from": "express@"
+}
