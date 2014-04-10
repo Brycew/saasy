@@ -1,23 +1,18 @@
-module.exports = function(config) {
-	var lib = {};
-	
-	lib.logBoot = function(message) {
+var config = require('./../config/defaults');
+module.exports = {
+	logBoot : function(message) {
 		if(config.isDebug) {
 			console.log("DEBUG BOOTSTRAP: "+message);
 		}
-	};
-	
-	lib.logInfo = function(message) {
+	},
+	logInfo : function(message) {
 		if(config.isDebug) {
 			console.log("DEBUG INFO: "+message);
 		}
-	};
-	
-	lib.logError = function(message) {
+	},
+	logError : function(message) {
 		if(config.isDebug) {
 			console.log("ERROR INFO: "+message);
 		}
 	}
-	
-	return lib;
 };

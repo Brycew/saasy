@@ -3,18 +3,18 @@ var moment   = require('moment');
 var config   = require('./../config/defaults');
 var mongoose = require('mongoose');
 var util     = require('util');
-var appLog   = require('./../libs/applog')(config);
+var appLog   = require('./../libs/applog');
 var misc     = require('./../libs/misc');
 
 var ObjectId = mongoose.Types.ObjectId;
 
-function server(serverSlip, database, schemas, appCallback) {
+function server(serverSlip, database, appCallback) {
 	////////////////// Public Variables /////////////////	
 	this.sessionsHTTP = {};
 	this.sessionsSOCK = {};
 	this.serverToken  = serverSlip.server_token;
 	this.databaseID   = serverSlip.server_database_id;
-	this.db           = database.useDb(config.dbApp.prefix + this.databaseID);
+	this.db           = database.connection.useDb(config.dbApp.prefix + this.databaseID);
 	this.models       = {};
 	this.accessGroups = {};
 	
@@ -28,12 +28,12 @@ function server(serverSlip, database, schemas, appCallback) {
 	
 	////////////// Bootstrap Functions //////////////////
 	function initSchemas(cb) {
-		for(var key in schemas) {
-			var obj = schemas[key];
-			parent.models[obj.title] = parent.db.model(obj.title,obj.schema,obj.title);
+		for(var key in database.schema) {
+			var Schema = database.schema[key];
+			parent.models[key] = parent.db.model(key,Schema,key);
 		}
 		return cb(true);
-	}
+	};
 	
 	function initAccessGroups(cb) {
 		parent.models.AccessGroups.listActive(function(resp) {
@@ -308,8 +308,7 @@ server.prototype.checkHTTPAuth = function(req) {
 	}	
 };
 
-server.prototype.routeHTTP = function(req,res, controller) {	
-
+server.prototype.routeHTTP = function(req,res, controller) {
 	var out = misc.prettyParams(req.method,req.params);
 	var isAuth = this.checkHTTPAuth(req);
 	

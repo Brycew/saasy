@@ -21,7 +21,8 @@ module.exports = {
 	},
 	
 	controller : {
-		dir           : './controllers/'	
+		appPath         : './controllersApp/',
+		masterPath      : './controllersMaster/'
 	},
 	
 	dbGlobal : {

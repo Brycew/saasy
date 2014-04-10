@@ -44,7 +44,7 @@ controller.prototype.postLoginbytoken = function() {
 			employee_status         : 'ACTIVE',
 			employee_login_token    : this.inputs.logintoken,
 			employee_login_password : this.inputs.loginpassword
-		};	
+		};
 		this.db.Employees.getByLoginToken(searchObj, function(resp) {
 			if(typeof resp === 'object' && resp !== null) {
  				createSession(resp._id,resp.employee_login_token,'127.0.0.1',resp.employee_group_id.access_groups,function(session) {
