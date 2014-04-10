@@ -10,7 +10,7 @@ var express     = require('express');
 //transport layers
 var http      = express();
 var websocket = require('socket.io');
-var socket    = {};
+var net       = require('net');
 
 
 var app = {
@@ -97,6 +97,7 @@ function listAppServers() {
 			appLog.logBoot('All App Servers Have Been Loaded');
 			//we're done here - lets move on to transport layers
 			initHttpServer();
+			initTCPServer();
 		}
 	});
 };
@@ -128,6 +129,24 @@ function buildEachServer(serverSlip) {
 /////////////////////////////////////////////////////////////
 
 
+//////////////////   HTTP Master Server   ///////////////////
+
+function routeMasterServer(req, res) {
+
+	res.setHeader('Content-Type', 'application/json');
+	res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+	res.setHeader('Expires', '-1');
+	res.setHeader('Pragma', 'no-cache');
+	
+	res.json({error:true, masterservertoken:404});
+	
+};
+
+
+
+
+//////////////////////   HTTP Server   //////////////////////
+
 function routeHttpServer(req, res) {
 	var serverToken = req.header('servertoken');
 	var sessionID = req.header('sessionid');
@@ -155,7 +174,8 @@ function initHttpServer() {
 	http.use(express.json());
 	http.use(express.urlencoded());
 	
-	
+	http.get('/master*', routeMasterServer);
+	http.post('/master*', routeMasterServer);	
 
 	http.get('/api*', routeHttpServer);
 	http.post('/api*', routeHttpServer);
@@ -165,10 +185,51 @@ function initHttpServer() {
 	});
 };
 
+//////////////////////   TCP SERVER   //////////////////////
 
-/*****
-	TODO SOCKET LAYER
- */
+
+function initTCPServer() {
+	
+	var server = net.createServer(function(connection) {
+		var serverToken = false;
+		var databaseID = false;
+		
+		connection.on('data', function(data) {
+			//parse our incoming json into object
+			try {
+				var format = JSON.parse(data);
+			} catch(err) {
+				return false;
+			}
+			
+			
+			//are we handshaking?
+			if(format.handshake) {
+				//have we even set a servertoken yet?
+				if(!serverToken || serverToken === null) {
+					//if we weren't given a correct servertoken, ask for the token again
+					if(!format.serverToken || isNaN(app.tokenMap[format.serverToken]) || !app.tokenMap[format.serverToken] ) {
+						return connection.write(JSON.stringify({handshake:true,request:['servertoken']}) + '\n');
+					}
+					
+					serverToken = format.serverToken;
+					databaseID = app.tokenMap[format.serverToken];
+				}
+			} else {
+				app.serverPool[databaseID].routeTCP(data, function(resp) {
+					connection.write(JSON.stringify({resp : resp }) + '\n');
+				});
+			}
+			
+		});
+		
+		//write handshake
+		connection.write(JSON.stringify({handshake:true,request:['servertoken']}) + '\n');
+	});
+	
+	server.listen(config.tcp.bindingPort);
+
+}
 
 
 

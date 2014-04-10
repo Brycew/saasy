@@ -33,9 +33,9 @@ module.exports = {
 		modelDir      : './models/app/',
 		prefix        : 'app_server_'
 	},
-	socket : {
+	tcp : {
 		bindingHost   : '127.0.0.1',
-		bindingPort   : 9091
+		bindingPort   : 9999
 	},
 	http : {
 		bindingHost   : '127.0.0.1',

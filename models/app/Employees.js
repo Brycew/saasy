@@ -7,6 +7,8 @@ var tableSchema = new mongoose.Schema({
     employee_status          : { type: String, default: 'ACTIVE'},
     employee_login_token     : String,
     employee_login_password  : String,
+    employee_pos_pin         : Number,
+    employee_pos_password    : String,
     
     employee_group_id        : { type: Schema.Types.ObjectId, ref: 'EmployeeGroups' },
     
